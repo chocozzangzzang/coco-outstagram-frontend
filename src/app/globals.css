@@ -1,26 +1,27 @@
-@import "tailwindcss";
+/* app/globals.css */
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Tailwind CSS v3의 기본 지시문 - 이 세 줄이 가장 위에 있어야 합니다. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* @import "tw-animate-css"; <-- 이 줄은 제거된 상태여야 합니다. */
+/* @custom-variant dark (&:is(.dark *)); <-- 이 줄은 제거된 상태여야 합니다. */
+
+html, body,#__next {
+  height: 100%;
+  width: 100%;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    /* 이 부분이 오류를 발생시키는 부분입니다. */
+    /* tailwind.config.ts에 border, ring 색상이 정확히 매핑되어야 합니다. */
+    /* @apply border-border outline-ring/50; */
   }
+  /* body {
+    @apply bg-background text-foreground;
+  } */
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* ... (나머지 globals.css 내용 유지) ... */
