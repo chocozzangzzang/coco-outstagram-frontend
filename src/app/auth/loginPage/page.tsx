@@ -45,7 +45,7 @@ const Page = () => {
   }
 
   return (
-    <div className="w-[80%] flex min-h-screen mx-auto">
+    <>
       <div className="w-1/2 flex items-center justify-center">
         <Image
           src="/instagram-web-lox-image.png"
@@ -116,7 +116,7 @@ const Page = () => {
             </CardFooter>
           </Card>
       </div>
-    </div>
+    </>
   );
 };
 
