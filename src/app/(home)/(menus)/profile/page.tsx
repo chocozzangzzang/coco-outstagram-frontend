@@ -36,7 +36,7 @@ const Page = () => {
                             <p>{nowUser}</p>
                             <p>## EDIT PROFILE ##</p>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="w-[70%] flex justify-between">
                             <p>POSTS 24</p>
                             <p>FOLLOWING 35</p>
                             <p>FOLLOWERS 15</p>
