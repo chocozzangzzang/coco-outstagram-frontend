@@ -34,7 +34,7 @@ const Page = () => {
         }).then(result => {
             if(result.status === 201) {
                 form.reset();
-                router.push("/loginPage");
+                router.push("/auth/loginPage");
             }
         })
     }

@@ -27,7 +27,7 @@ const Page = () => {
     await fetch("http://localhost:8080/api/user/login", {
       method: "POST",
       headers: {
-        "Authoriztion": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+        "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ email: values.email, password: values.password })
@@ -111,7 +111,7 @@ const Page = () => {
             </CardContent>
             <CardFooter className="w-4/5 flex flex-col items-center">
               <p className="text-center text-sm text-gray-500 mt-6">
-                계정이 없으신가요? <Link href="/registerPage" className="text-blue-500 font-semibold no-underline">가입하기</Link>
+                계정이 없으신가요? <Link href="/auth/registerPage" className="text-blue-500 font-semibold no-underline">가입하기</Link>
               </p>
             </CardFooter>
           </Card>

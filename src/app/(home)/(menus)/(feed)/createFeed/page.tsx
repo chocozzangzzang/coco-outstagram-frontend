@@ -5,18 +5,39 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import Image from "next/image";
+
+import { storage } from "../../../../../firebase/config.js";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { v4 as uuidv4 } from "uuid"; 
+
 import { ChangeEvent,  useEffect,  useRef, useState } from "react";
+import { error } from "console";
+import { useRouter } from "next/navigation";
 
 const Page = () => {
 
     const [ postImages, setPostImages ] = useState<string[]>([]);
+    const [ files, setFiles ] = useState<File[]>([]);
+    const [ downloadURLs, setDownloadURLs ] = useState([]);
+    const [ uploadProgress, setUploadProgress ] = useState({});
+    const [ error, setError ] = useState("");
+    
     const [ feedDescription, setFeedDescription ] = useState("");
     const postImagesRef = useRef<HTMLInputElement>(null);
 
     const [ current, setCurrent ] = useState(0);
     const [ count, setCount ] = useState(0);
     const [ api, setApi ] = useState<CarouselApi>();
+
+    const router = useRouter();
+    const resetState = () => {
+        setPostImages([]);          // Resets to an empty array
+        setFiles([]);              // Resets to an empty array
+        setDownloadURLs([]);       // Resets to an empty array
+        setUploadProgress({});     // Resets to an empty object
+        setError("");              // Resets to an empty string
+        setFeedDescription("");    // Resets to an empty string
+    };
 
     useEffect(() => {
         if(!api) return;
@@ -30,6 +51,87 @@ const Page = () => {
       })
     }, [api, postImages])
 
+    const handlePostUpload = async () => {
+        if( !files ) {
+            alert("파일을 첨부하세요!");
+            return;
+        }
+
+        if( !feedDescription ) {
+            alert("피드 내용을 입력하세요!");
+            return;
+        }
+        
+        const uploadedURLs: { name: string; fileName: string; fileUrl: string; }[] = [];
+        for( const file of files ) {
+            const uuid = uuidv4();
+            const storageRef = ref(storage, `feeds/${uuid}${(new Date()).getTime()}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+            let fileName: string = "";
+            try {
+                await new Promise<void>((resolve, reject) => {
+                    uploadTask.on(
+                        'state_changed',
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            fileName = snapshot.ref.name;
+                            setUploadProgress((prev) => ({
+                                ...prev,
+                                [file.name] : progress,
+                            }));
+                            //console.log(`${file.name}의 진행상황 : ${progress.toFixed(2)}`);
+                        },
+                        (error) => {
+                            //console.log(`${file.name} : 업로드 실패!!`);
+                            setError((prev) => prev + `\n${file.name} 업로드 실패 : ${error.message}`);
+                            reject(error);
+                        },
+                        async () => {
+                            const url = await getDownloadURL(uploadTask.snapshot.ref);
+                            uploadedURLs.push({ name : file.name, fileName : fileName, fileUrl : url});
+                            console.log(`${file.name} 업로드 완료 - URL : ${url} >> ${fileName}`);
+                            resolve();
+                        }
+                    );
+                });
+            } catch (error) {
+                console.log(`${file.name} error : ${error}`);
+            }
+        }
+        
+        await fetch("http://localhost:8080/api/post/create", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ content :  feedDescription, writer : localStorage.getItem("username") })
+            }).then (result => {
+                result.json().then((data) => {
+                    uploadedURLs.map(async (url, index) => {
+                        console.log("--" + url.fileName);
+                        await fetch("http://localhost:8080/api/post/image", {
+                            method: "POST",
+                            headers: {
+                            "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+                            "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({ postId : data.postId, imageIdx: index, imageUrl: url.fileUrl, fileName: url.fileName })
+                            }).then((result) => {
+                                if(result.status !== 201) {
+                                    alert("게시물 작성에 실패했습니다.");
+                                    return;
+                                }
+                            });
+                        }
+                    )
+                }    
+            );
+            resetState();
+            router.push("/");
+        });         
+    }
+
     const handlePostImages = (event : ChangeEvent<HTMLInputElement>) => {
         const { files } = event.target;
         let tempImages = [];
@@ -40,6 +142,7 @@ const Page = () => {
                 event.target.value = "";
                 return;
             } else {
+                setFiles([]);
                 for(let i = 0; i < files.length; i++) {
                     const file = files[i];
                     if(file.size > 5 * 1024 * 1024) {
@@ -48,6 +151,7 @@ const Page = () => {
                         return;
                     } else {
                         const imgUrl = URL.createObjectURL(file);
+                        setFiles(prev => [...prev, file]);
                         tempImages.push(imgUrl)
                     }
                 }
@@ -86,7 +190,7 @@ const Page = () => {
         <div className="flex flex-col h-screen w-[80%] mx-auto pt-12 pb-12 gap-4 items-center">
             <div className="flex flex-col w-[80%] h-[80%]">
                 <div className="flex justify-end pb-2">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={handlePostUpload}>
                         게시하기
                     </Button>
                 </div>
