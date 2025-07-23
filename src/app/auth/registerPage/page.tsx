@@ -28,6 +28,7 @@ const Page = () => {
         await fetch("http://localhost:8080/api/user/register", {
             method: "POST",
             headers: {
+                "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
                 "Content-Type" : "application/json",
             },
             body: JSON.stringify({ username : values.username, email : values.email, password : values.password})
