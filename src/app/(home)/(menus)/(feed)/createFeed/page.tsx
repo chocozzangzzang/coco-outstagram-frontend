@@ -14,6 +14,13 @@ import { ChangeEvent,  useEffect,  useRef, useState } from "react";
 import { error } from "console";
 import { useRouter } from "next/navigation";
 
+// Define the type for better clarity (matching your backend DTO)
+interface PostImageInfo {
+    imageIdx: number;
+    imageUrl: string;
+    fileName: string;
+}
+
 const Page = () => {
 
     const [ postImages, setPostImages ] = useState<string[]>([]);
@@ -50,6 +57,24 @@ const Page = () => {
         setCurrent(api.selectedScrollSnap() + 1)
       })
     }, [api, postImages])
+    
+    const uploadPost = async(uploadedURLs : PostImageInfo[]) => {
+        const postData = { content :  feedDescription, writer : localStorage.getItem("username"), postImages : uploadedURLs };
+        const result = await fetch("http://localhost:8080/api/post/create", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(postData)
+        })
+        if(result.status !== 201) {
+            alert("게시물 작성에 실패하였습니다!");
+        } else {
+            resetState();
+            router.push("/");
+        }
+    }
 
     const handlePostUpload = async () => {
         if( !files ) {
@@ -62,14 +87,12 @@ const Page = () => {
             return;
         }
         
-        const uploadedURLs: { name: string; fileName: string; fileUrl: string; }[] = [];
-        for( const file of files ) {
+        const uploadPromise : Promise<PostImageInfo>[] = files.map(async (file, index) => {
             const uuid = uuidv4();
             const storageRef = ref(storage, `feeds/${uuid}${(new Date()).getTime()}`);
             const uploadTask = uploadBytesResumable(storageRef, file);
-            let fileName: string = "";
-            try {
-                await new Promise<void>((resolve, reject) => {
+            return new Promise<PostImageInfo>((resolve, reject) => {
+                    let fileName: string = "";
                     uploadTask.on(
                         'state_changed',
                         (snapshot) => {
@@ -88,48 +111,22 @@ const Page = () => {
                         },
                         async () => {
                             const url = await getDownloadURL(uploadTask.snapshot.ref);
-                            uploadedURLs.push({ name : file.name, fileName : fileName, fileUrl : url});
                             console.log(`${file.name} 업로드 완료 - URL : ${url} >> ${fileName}`);
-                            resolve();
+                            resolve({ imageIdx : index, imageUrl : url, fileName : fileName});
                         }
                     );
-                });
-            } catch (error) {
-                console.log(`${file.name} error : ${error}`);
-            }
-        }
+                })
+            })
         
-        await fetch("http://localhost:8080/api/post/create", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ content :  feedDescription, writer : localStorage.getItem("username") })
-            }).then (result => {
-                result.json().then((data) => {
-                    uploadedURLs.map(async (url, index) => {
-                        console.log("--" + url.fileName);
-                        await fetch("http://localhost:8080/api/post/image", {
-                            method: "POST",
-                            headers: {
-                            "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
-                            "Content-Type": "application/json"
-                            },
-                            body: JSON.stringify({ postId : data.postId, imageIdx: index, imageUrl: url.fileUrl, fileName: url.fileName })
-                            }).then((result) => {
-                                if(result.status !== 201) {
-                                    alert("게시물 작성에 실패했습니다.");
-                                    return;
-                                }
-                            });
-                        }
-                    )
-                }    
-            );
-            resetState();
-            router.push("/");
-        });         
+        try {
+            const uploadedURLs = await Promise.all(uploadPromise);
+            // console.log(`이미지 업로드 완료! : ${uploadedURLs}`);
+            uploadPost(uploadedURLs);
+        } catch (error) {
+        // 이미지 업로드 또는 백엔드 API 호출 중 발생한 모든 에러를 여기서 처리
+        console.error('글 작성 과정에서 최종 오류 발생:', error);
+        // 사용자에게 적절한 오류 메시지 표시
+        }   
     }
 
     const handlePostImages = (event : ChangeEvent<HTMLInputElement>) => {
@@ -167,24 +164,6 @@ const Page = () => {
     const handleDescription = (event : ChangeEvent<HTMLTextAreaElement>) => {
         setFeedDescription(event.target.value);
     }
-
-    const responsive = {
-        desktop: {
-            breakpoint: { max: 3000, min: 1024 },
-            items: 1,
-            slidesToSlide: 1 // optional, default to 1.
-        },
-        tablet: {
-            breakpoint: { max: 1024, min: 464 },
-            items: 1,
-            slidesToSlide: 1 // optional, default to 1.
-        },
-        mobile: {
-            breakpoint: { max: 464, min: 0 },
-            items: 1,
-            slidesToSlide: 1 // optional, default to 1.
-        }
-    };
 
     return (
         <div className="flex flex-col h-screen w-[80%] mx-auto pt-12 pb-12 gap-4 items-center">

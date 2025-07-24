@@ -20,7 +20,7 @@ export default function RootLayout({
           <div className="m-2 p-4 gap-6 flex flex-col md:p-6 md:m-4" style={{ "flex" : 1 }}>
             <LeftSideBar />
           </div>
-          <div className="border-l-2 border-gray-300 hidden md:block"></div> {/* 얇은 회색 구분선 */}
+          <div className="border-l-2 border-gray-300"></div> {/* 얇은 회색 구분선 */}
           <div className="flex justify-center" style={{ "flex" : 3 }}>
             { children }
           </div>

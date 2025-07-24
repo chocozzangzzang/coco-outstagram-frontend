@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { storage } from "@/firebase/config";
-import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
+import { deleteObject, getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid"; 
@@ -21,7 +21,8 @@ const Page = () => {
         id: number; 
         username: string; 
         email: string; 
-        role: string; 
+        role: string;
+        profilePictureName: string;
         profilePictureUrl: string; 
         createdAt: string;}>();
     const profileImageRef = useRef<HTMLInputElement>(null);
@@ -37,6 +38,7 @@ const Page = () => {
         }).then(async (result) => {
             const data = await result.json();
             setUserProfile(data);
+            setProfileImageUrl(data.profilePictureUrl);
         })
     }
 
@@ -63,10 +65,12 @@ const Page = () => {
             alert("이미지가 변경되지 않았습니다!");
             return;
         }
+        console.log(userProfile?.profilePictureName);
         const uuid = uuidv4();
         const storageRef = ref(storage, `profiles/${userProfile?.username}_${uuid}`)
         const uploadTask = uploadBytesResumable(storageRef, profileImage);
-
+        const prevImage = userProfile?.profilePictureName;
+        console.log("--> ", prevImage);
         let fileName = "";
         try {
             await new Promise<void>((resolve, reject) => {
@@ -102,6 +106,16 @@ const Page = () => {
                                 alert("업데이트하지 못했습니다!");
                                 return;
                             } else {
+                                console.log("<<< ", prevImage);
+                                if(prevImage) {
+                                    const deleteRef = ref(storage, `profiles/${prevImage}`);
+                                    deleteObject(deleteRef)
+                                        .then(() => {
+                                            router.push("/profile");
+                                        }).catch((error) => {
+                                            console.log(error);
+                                        })
+                                }
                                 router.push("/profile");
                             }
                         })
