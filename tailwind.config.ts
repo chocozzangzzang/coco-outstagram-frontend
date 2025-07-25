@@ -7,6 +7,7 @@ const config: Config = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './src/**/*.{js,ts,jsx,tsx,mdx}', // src 폴더를 사용한다면 이 줄도 포함되어야 합니다.
+    './src/layouts/*.{js,ts,tsx,jsx,mdx}'
   ],
   theme: {
     extend: {
