@@ -12,7 +12,7 @@ function Page() {
     await fetch("http://localhost:8080/api/post/all")
       .then( async (result) => {
         const data = await result.json();
-        console.log(data);
+        // console.log("-->", data);
         setPosts(data);
       })
   }
@@ -20,7 +20,6 @@ function Page() {
   useEffect(() => {
     getPosts();
   }, [])
-
 
   return (
     <> {/* 전체 화면 높이를 차지하는 Flex 컨테이너 */}      

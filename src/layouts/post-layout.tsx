@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { PostProps } from "@/types/post";
 import { getTimeAgo } from "@/utils/timeCalcul";
-import { HeartPlusIcon } from "lucide-react";
+import { HeartIcon, HeartPlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const PostLayout: React.FC<PostProps> = ( { post } ) => {
@@ -11,11 +11,10 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
     const [ api, setApi ] = useState<CarouselApi>();
     const [ current, setCurrent ] = useState(0);
     const [ count, setCount ] = useState(0);
+    const [ liked, setLiked ] = useState(false);
 
     const createdDuration = useMemo(() => getTimeAgo(post.createdAt), [post.createdAt]);
-
     useEffect(() => {
-
         if(!api) return;
 
         if(post.postImages.length > 0) {
@@ -28,8 +27,16 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
             })
 
             setCount(post.postImages.length);
+
+            const userId = localStorage.getItem("userid");
+
+            post.likes.map((like) => {
+                if(like.userId.toString() === userId) {setLiked(true); return;}
+            })   
         } 
     }, [api])
+
+    console.log("----" , liked);
 
     return (
         <>
@@ -76,14 +83,14 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
                     }
                 </div>
                 <div className="w-[80%] h-[8%]  pl-2">
-                    <HeartPlusIcon />
+                    { liked ? <HeartIcon /> : <HeartPlusIcon />}
                 </div>
                 <div className="w-[80%] h-[10%]  flex flex-col pl-2">
-                    <p>Likes 123개</p>
+                    <p>Likes {post.likes.length}개</p>
                     <p>{post.content}</p>
                 </div>
                 <div className="w-[80%] h-[10%]  pl-2">
-                    COMMENT COUNT & SHOW BUTTON SECTION
+                    댓글 {post.comments.length}개 ##댓글보기##
                 </div>
             </div>
         </>

@@ -34,8 +34,9 @@ const Page = () => {
     }).then (result => {
       if(result.status === 200) {
         result.json().then(data => {
-          localStorage.setItem("username", data.username);
-          localStorage.setItem("jwttoken", data.token);
+          localStorage.setItem("username", data.jwt.username);
+          localStorage.setItem("userid", data.id);
+          localStorage.setItem("jwttoken", data.jwt.token);
         });
         form.reset();
         router.push("/");
