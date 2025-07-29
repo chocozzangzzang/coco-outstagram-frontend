@@ -1,10 +1,12 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { PostProps } from "@/types/post";
+import { Post, PostProps } from "@/types/post";
 import { getTimeAgo } from "@/utils/timeCalcul";
 import { HeartIcon, HeartPlusIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import PostModal from "./post-modal";
+import { Button } from "@/components/ui/button";
 
 const PostLayout: React.FC<PostProps> = ( { post } ) => {
 
@@ -12,6 +14,21 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
     const [ current, setCurrent ] = useState(0);
     const [ count, setCount ] = useState(0);
     const [ liked, setLiked ] = useState(false);
+    const [ likeId, setLikeId ] = useState<Number>();
+
+    const [ isModalOpen, setIsModalOpen ] = useState(false);
+    const [ currentPost, setCurrentPost ] = useState<Post | null>(null);
+    const userId = localStorage.getItem("userid");
+
+    const openModal = (post : Post) => {
+        setCurrentPost(post);
+        setIsModalOpen(true);
+    }
+
+    const closeModal = () => {
+        setCurrentPost(null);
+        setIsModalOpen(false);
+    }
 
     const createdDuration = useMemo(() => getTimeAgo(post.createdAt), [post.createdAt]);
     useEffect(() => {
@@ -27,16 +44,62 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
             })
 
             setCount(post.postImages.length);
-
-            const userId = localStorage.getItem("userid");
-
+            console.log(post.likes);
             post.likes.map((like) => {
-                if(like.userId.toString() === userId) {setLiked(true); return;}
+                if(like.userId.toString() === userId) {
+                    setLikeId(like.id); 
+                    setLiked(true); 
+                    return;
+                }
             })   
         } 
     }, [api])
 
-    console.log("----" , liked);
+    const like = async () => {
+        const result = await fetch("http://localhost:8080/api/post/like", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                postId: post.id,
+                userId: userId,
+            })
+        });
+        
+        if(result.status === 201) {
+            setLiked(true);
+            const { id } = await result.json();
+            setLikeId(id);
+            post.likes.push({id : id, postId : post.id, userId : Number(userId)});  
+        } else {
+            alert("좋아요를 누를 수 없는 상태입니다!");
+        }
+        return;
+    }
+
+    const dislike = async () => {
+        const result = await fetch("http://localhost:8080/api/post/dislike", {
+            method: "DELETE",
+            headers: {
+                "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                id: likeId,
+                postId: post.id,
+                userId: Number(userId),
+            })
+        })
+
+        if(result.status === 200) {
+            setLiked(false);
+            const deletedLikes = post.likes.filter(like => like.id !== likeId);
+            post.likes = deletedLikes;
+            setLikeId(0);
+        }
+    }
 
     return (
         <>
@@ -82,17 +145,21 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
                         </Carousel>
                     }
                 </div>
-                <div className="w-[80%] h-[8%]  pl-2">
-                    { liked ? <HeartIcon /> : <HeartPlusIcon />}
+                <div className="flex items-center w-[80%] h-[5%] pl-2">
+                    { liked ? <HeartIcon onClick={dislike} /> : <HeartPlusIcon onClick={like} />}
                 </div>
                 <div className="w-[80%] h-[10%]  flex flex-col pl-2">
-                    <p>Likes {post.likes.length}개</p>
+                    <p>{post.likes.length} likes</p>
                     <p>{post.content}</p>
                 </div>
                 <div className="w-[80%] h-[10%]  pl-2">
-                    댓글 {post.comments.length}개 ##댓글보기##
+                    <Button variant="ghost" onClick={() => openModal(post)}> {post.comments.length} comments </Button>
                 </div>
             </div>
+
+            {isModalOpen && post && (
+                <PostModal post={post} onClose={closeModal} />
+            )}
         </>
     )
 }
