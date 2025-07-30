@@ -146,7 +146,7 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
                     }
                 </div>
                 <div className="flex items-center w-[80%] h-[5%] pl-2">
-                    { liked ? <HeartIcon onClick={dislike} /> : <HeartPlusIcon onClick={like} />}
+                    { liked ? <HeartIcon fill="red" onClick={dislike} /> : <HeartIcon onClick={like} />}
                 </div>
                 <div className="w-[80%] h-[10%]  flex flex-col pl-2">
                     <p>{post.likes.length} likes</p>
