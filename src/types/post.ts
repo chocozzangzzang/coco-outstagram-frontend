@@ -31,3 +31,19 @@ export interface PostImageProps {
   imageUrl: string;
   fileName: string;
 }
+
+export interface User {
+  id: number;
+  username: string;
+  profilePictureName: string;
+  profilePictureUrl: string;
+  role: string;
+  email: string;
+  createdAt: string;
+  comments: Comment[];
+  likes: Like[];
+}
+
+export interface UserProp {
+  user : User;
+}
