@@ -22,10 +22,13 @@ const Page = () => {
 
   return (
     <div className="w-full h-full flex flex-col items-center text-lg font-bold gap-10 overflow-y-auto pt-8 pb-8">
-        { users.map((user) => {
-            return (
-                <FollowUser user={user}/>
-            )
+        { users.map((user, index) => {
+            if(user.id !== Number(localStorage.getItem("userid"))) {
+                return (
+                    <FollowUser key={index} user={user}/>
+                )
+            }
+            
         })}
     </div>
   )
