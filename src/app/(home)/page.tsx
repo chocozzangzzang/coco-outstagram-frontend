@@ -9,12 +9,26 @@ function Page() {
   const [ posts, setPosts ] = useState<Post[]>([]);
 
   const getPosts = async() => {
-    await fetch("http://localhost:8080/api/post/all")
-      .then( async (result) => {
-        const data = await result.json();
-        // console.log("-->", data);
-        setPosts(data);
-      })
+      const postResponse = await fetch("http://localhost:8080/api/post/all");
+      const postResult = await postResponse.json();
+
+      const userResponse = await fetch("http://localhost:8080/api/user/all");
+      const userResult = await userResponse.json();
+
+      const response = await fetch("http://localhost:8080/api/user/follows");
+      const result = await response.json();
+      
+      const myFollowing = result.filter((res : {followerId : number}) => res.followerId === Number(localStorage.getItem("userid")))
+                                .map((temp : {followingId : number}) => temp.followingId);
+      myFollowing.push(Number(localStorage.getItem('userid')));
+      const iWantShow = userResult.filter((user : {id : number}) => myFollowing.includes(user.id)).map((user : {username : string}) => user.username);
+
+      const filteredPosts = postResult.filter((post : {writer : string}) => iWantShow.includes(post.writer));
+      setPosts(filteredPosts);
+  }
+
+  const getFollows = async() => {
+    
   }
 
   useEffect(() => {
