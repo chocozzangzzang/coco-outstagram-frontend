@@ -1,15 +1,105 @@
-import { Comment, Post } from "@/types/post";
+import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Comment, Post, User } from "@/types/post";
+import { getTimeAgo } from "@/utils/timeCalcul";
 import { XIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const PostModal = ({ post, onClose } : {post : Post, onClose : () => void;}) => {
+const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, onClose : () => void;}) => {
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<Comment[]>(post.comments); // 모달 내에서 댓글 상태 관리
+  const [current, setCurrent] = useState(0);
+  const [count, setCount] = useState(0);
+  const [user, setUser] = useState<User>();
 
-  const handleAddComment = () => {
+  const [api, setApi] = useState<CarouselApi>();
+  const createdDuration = useMemo(() => getTimeAgo(post.createdAt), [post.createdAt]);
+
+  const getComments = async(id : number) => {
+    const response = await fetch("http://localhost:8080/api/comment/all", {
+      method: "POST",
+      headers: {
+        "Authorization" : `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+        "Content-Type" : "application/json"
+      },
+      body : JSON.stringify({
+        postId: post.id,
+      })
+    });
+    if(response.status !== 200) {
+      alert("댓글을 불러올 수 없습니다");
+    } else {
+      const result = await response.json();
+      setComments(result);
+    }
+  }
+
+  const getUserInfo = async() => {
+    const username = String(localStorage.getItem('username'));
+    const response = await fetch("http://localhost:8080/api/user/profile", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username : username,
+      })
+    });
+    if(response.status !== 200) {
+      alert("프로필을 불러올 수 없습니다.");
+      onClose();
+    } else {
+      const result = await response.json();
+      setUser(result);
+    }
+  }
+
+  useEffect(() => {
+          if(!api) return;
+
+          getUserInfo();
+
+          if(post.postImages.length > 0) {
+              api.scrollTo(0);
+              setCurrent(api.selectedScrollSnap() + 1);
+  
+              api.on("select", () => {
+                  setCurrent(api.selectedScrollSnap() + 1)
+              })
+              setCount(post.postImages.length);
+              console.log(post.likes);  
+          }
+
+          if(post.id) {
+            getComments(post.id);
+          }
+      }, [api]);
+
+  const handleAddComment = async () => {
     if (newComment.trim()) {
-      const commentId = 11; // 간단한 고유 ID 생성
-      setComments([...comments, { id: commentId, userId: 1, postId: 12, content: newComment }]);
+      const username = String(localStorage.getItem("username"));
+      const userId = Number(localStorage.getItem('userid'));
+      const postId = post.id;
+
+      const response = await fetch("http://localhost:8080/api/comment/add", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            postId: postId,
+            userId: userId,
+            username: username,
+            content: newComment,
+        })
+      });
+      if(response.status !== 201) {
+        alert("댓글을 달지 못했습니다!!");
+      } else {
+        const result = await response.json();
+        setComments([...comments, result]);
+      }
       setNewComment('');
     }
   };
@@ -29,14 +119,40 @@ const PostModal = ({ post, onClose } : {post : Post, onClose : () => void;}) => 
       onClick={handleOverlayClick}
     >
       {/* 모달 컨테이너 */}
-      <div className="bg-white rounded-xl shadow-2xl flex flex-col md:flex-row w-full max-w-4xl h-auto max-h-[90vh] overflow-hidden transform scale-95 animate-scale-in">
+      <div className="bg-white rounded-xl shadow-2xl flex flex-col md:flex-row w-full max-w-4xl h-[80vh] overflow-hidden transform scale-95 animate-scale-in">
         {/* 왼쪽: 이미지 영역 */}
         <div className="w-full md:w-1/2 bg-gray-200 flex items-center justify-center overflow-hidden relative">
-          <img
-            src={post.postImages[0].imageUrl}
-            alt="게시글 이미지"
-            className="w-full h-full object-contain" // 이미지 비율 유지
-          />
+          {post.postImages.length > 0 && 
+            <Carousel className="w-[100%] h-[100%]" setApi={setApi}>
+                <CarouselContent className="w-full h-full">
+                  {post.postImages.map((postImage, index) => (
+                    <CarouselItem key={index} className="h-full w-full relative">
+                      <img
+                        src={postImage.imageUrl}
+                        alt={`postImage ${index}`}
+                        className="h-full w-full object-contain absolute inset-0 pl-6"
+                        // width={800} height={600}
+                      />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious onClick={(e) => {
+                    e.stopPropagation();
+                    api?.scrollPrev();
+                    }
+                } />
+                <CarouselNext onClick={(e) => {
+                  e.stopPropagation()
+                  api?.scrollNext();
+                  }
+                } />
+                {
+                  post.postImages.length > 0 && (
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-black z-10 font-extrabold">
+                    { current } / { count }
+                  </div>)
+                }
+            </Carousel>}
         </div>
 
         {/* 오른쪽: 게시글 및 댓글 영역 */}
@@ -44,8 +160,8 @@ const PostModal = ({ post, onClose } : {post : Post, onClose : () => void;}) => 
           {/* 모달 헤더 (사용자 정보 및 닫기 버튼) */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center">
-              <img src="./globe.svg" className="w-9 h-9 rounded-full mr-3 border border-gray-300" />
-              <span className="font-bold text-gray-800 text-lg">test</span>
+              <img src={user?.profilePictureUrl? user.profilePictureUrl : "./globe.svg"} className="w-9 h-9 rounded-full mr-3 border border-gray-300" />
+              <span className="font-bold text-gray-800 text-lg">{post.writer}</span>
             </div>
             <button
               onClick={onClose}
@@ -59,10 +175,10 @@ const PostModal = ({ post, onClose } : {post : Post, onClose : () => void;}) => 
           {/* 게시글 내용 */}
           <div className="p-4 border-b border-gray-200">
             <p className="text-gray-700 leading-relaxed text-base">
-              <span className="font-bold mr-2">tester</span>
-              caption??
+              <span className="font-bold mr-2">{post.writer}</span>
+              {post.content}
             </p>
-            <p className="text-gray-500 text-xs mt-2">time</p>
+            <p className="text-gray-500 text-xs mt-2">{createdDuration}</p>
           </div>
 
           {/* 댓글 목록 */}
@@ -71,9 +187,14 @@ const PostModal = ({ post, onClose } : {post : Post, onClose : () => void;}) => 
               <p className="text-gray-500 text-center py-4">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</p>
             ) : (
               comments.map(comment => (
-                <div key={comment.id} className="mb-3 flex items-start">
-                  <span className="font-semibold text-gray-800 mr-2">{comment.userId}</span>
-                  <p className="text-gray-700 flex-1">{comment.content}</p>
+                <div key={comment.id} className="mb-3 flex flex-col items-start">
+                  <div className="flex">
+                    <span className="font-semibold text-gray-800 mr-2">{comment.username}</span>
+                    <p className="text-gray-400 flex-1">{comment.content}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400">{getTimeAgo(comment.createdAt)}</p>
+                  </div>
                 </div>
               ))
             )}
@@ -87,11 +208,6 @@ const PostModal = ({ post, onClose } : {post : Post, onClose : () => void;}) => 
               placeholder="댓글 달기..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleAddComment();
-                }
-              }}
             />
             <button
               onClick={handleAddComment}

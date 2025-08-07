@@ -27,10 +27,6 @@ function Page() {
       setPosts(filteredPosts);
   }
 
-  const getFollows = async() => {
-    
-  }
-
   useEffect(() => {
     getPosts();
   }, [])

@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Post, PostProps } from "@/types/post";
 import { getTimeAgo } from "@/utils/timeCalcul";
-import { HeartIcon, HeartPlusIcon } from "lucide-react";
+import { HeartIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import PostModal from "./post-modal";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
     const [ current, setCurrent ] = useState(0);
     const [ count, setCount ] = useState(0);
     const [ liked, setLiked ] = useState(false);
-    const [ likeId, setLikeId ] = useState<Number>();
+    const [ likeId, setLikeId ] = useState<number>();
 
     const [ isModalOpen, setIsModalOpen ] = useState(false);
     const [ currentPost, setCurrentPost ] = useState<Post | null>(null);
@@ -152,13 +152,13 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
                     <p>{post.likes.length} likes</p>
                     <p>{post.content}</p>
                 </div>
-                <div className="w-[80%] h-[10%]  pl-2">
-                    <Button variant="ghost" onClick={() => openModal(post)}> {post.comments.length} comments </Button>
+                <div className="w-[80%] h-[10%] p-0">
+                    <Button variant="ghost" onClick={() => openModal(post)}>{post.comments.length} comments</Button>
                 </div>
             </div>
 
             {isModalOpen && post && (
-                <PostModal post={post} onClose={closeModal} />
+                <PostModal post={post} isLike={liked} onClose={closeModal} />
             )}
         </>
     )
