@@ -1,7 +1,8 @@
+import { Button } from "@/components/ui/button";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Comment, Post, User } from "@/types/post";
 import { getTimeAgo } from "@/utils/timeCalcul";
-import { XIcon } from "lucide-react";
+import { PencilIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, onClose : () => void;}) => {
@@ -34,7 +35,7 @@ const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, o
   }
 
   const getUserInfo = async() => {
-    const username = String(localStorage.getItem('username'));
+    const username = post.writer;
     const response = await fetch("http://localhost:8080/api/user/profile", {
       method: "POST",
       headers: {
@@ -187,14 +188,29 @@ const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, o
               <p className="text-gray-500 text-center py-4">아직 댓글이 없습니다. 첫 댓글을 남겨보세요!</p>
             ) : (
               comments.map(comment => (
-                <div key={comment.id} className="mb-3 flex flex-col items-start">
-                  <div className="flex">
-                    <span className="font-semibold text-gray-800 mr-2">{comment.username}</span>
-                    <p className="text-gray-400 flex-1">{comment.content}</p>
+                <div key={comment.id} className="flex gap-4">
+                  <div className="mb-3 flex flex-col items-start">
+                    <div className="flex">
+                      <span className="font-semibold text-gray-800 mr-2">{comment.username}</span>
+                      <p className="text-gray-400 flex-1">{comment.content}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">{getTimeAgo(comment.createdAt)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-gray-400">{getTimeAgo(comment.createdAt)}</p>
-                  </div>
+                  {
+                    comment.userId === Number(localStorage.getItem('userid')) && (
+                      <div className="flex-1 flex justify-center items-center">
+                        <Button>
+                          <PencilIcon />
+                        </Button>
+                        <Button>
+                          <Trash2Icon />
+                        </Button>
+                      </div>
+                    )
+                  }
+                  
                 </div>
               ))
             )}

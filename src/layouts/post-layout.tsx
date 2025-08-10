@@ -136,11 +136,11 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
                                 }
                             } />
                             {
-                                post.postImages.length > 0 && (
-                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-black z-10 font-extrabold">
-                                        { current } / { count }
-                                    </div>
-                                )
+                            post.postImages.length > 0 && (
+                                <div className="absolute left-1/2 -translate-x-1/2 text-sm text-black z-10 font-extrabold">
+                                    { current } / { count }
+                                </div>
+                            )
                             }
                         </Carousel>
                     }
