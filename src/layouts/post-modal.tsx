@@ -1,38 +1,27 @@
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Comment, Post, User } from "@/types/post";
 import { getTimeAgo } from "@/utils/timeCalcul";
 import { PencilIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import PostCommentLayout from "./post-comment-layout";
 
-const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, onClose : () => void;}) => {
+const PostModal = ({ post, isLike, onClose, comments, setComments } : {
+    post : Post, 
+    isLike : boolean, 
+    onClose : () => void,
+    comments: Comment[],
+    setComments: React.Dispatch<React.SetStateAction<Comment[]>>
+  }) => {
   const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState<Comment[]>(post.comments); // 모달 내에서 댓글 상태 관리
+  // const [comments, setComments] = useState<Comment[]>(post.comments); // 모달 내에서 댓글 상태 관리
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
   const [user, setUser] = useState<User>();
 
   const [api, setApi] = useState<CarouselApi>();
   const createdDuration = useMemo(() => getTimeAgo(post.createdAt), [post.createdAt]);
-
-  const getComments = async(id : number) => {
-    const response = await fetch("http://localhost:8080/api/comment/all", {
-      method: "POST",
-      headers: {
-        "Authorization" : `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
-        "Content-Type" : "application/json"
-      },
-      body : JSON.stringify({
-        postId: post.id,
-      })
-    });
-    if(response.status !== 200) {
-      alert("댓글을 불러올 수 없습니다");
-    } else {
-      const result = await response.json();
-      setComments(result);
-    }
-  }
 
   const getUserInfo = async() => {
     const username = post.writer;
@@ -72,7 +61,7 @@ const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, o
           }
 
           if(post.id) {
-            getComments(post.id);
+            //getComments(post.id);
           }
       }, [api]);
 
@@ -99,7 +88,8 @@ const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, o
         alert("댓글을 달지 못했습니다!!");
       } else {
         const result = await response.json();
-        setComments([...comments, result]);
+        // comments.push(result);
+        setComments(prevComments => [...prevComments, result]);
       }
       setNewComment('');
     }
@@ -111,6 +101,22 @@ const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, o
       onClose();
     }
   };
+
+  const editComment = (id : number) => {
+    alert(id);
+  }
+
+  const deleteComment = async (id : number) => {
+    if(!confirm("댓글을 삭제하시겠습니까?")) return;
+    const response = await fetch(`http://localhost:8080/api/comment/delete?commentId=${id}`);
+    if(response.status !== 200) {
+      alert("댓글을 삭제하지 못했습니다!!");
+    } else {
+      const newComments = comments.filter((comment) => comment.id !== id);
+      comments = newComments;
+      setComments(newComments);
+    }
+  }
 
   return (
     // 모달 오버레이
@@ -161,7 +167,8 @@ const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, o
           {/* 모달 헤더 (사용자 정보 및 닫기 버튼) */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center">
-              <img src={user?.profilePictureUrl? user.profilePictureUrl : "./globe.svg"} className="w-9 h-9 rounded-full mr-3 border border-gray-300" />
+              <img src={user?.profilePictureUrl? user.profilePictureUrl : "./globe.svg"} 
+              className="w-9 h-9 rounded-full mr-3 border border-gray-300" />
               <span className="font-bold text-gray-800 text-lg">{post.writer}</span>
             </div>
             <button
@@ -189,8 +196,13 @@ const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, o
             ) : (
               comments.map(comment => (
                 <div key={comment.id} className="flex gap-4">
-                  <div className="mb-3 flex flex-col items-start">
+                  <PostCommentLayout comment={comment} delComms={deleteComment}/>
+                  {/* <div className="mb-3 flex flex-col items-start flex-1">
                     <div className="flex">
+                      <Avatar className="w-8 h-8 me-2">
+                        <AvatarImage src={getAvatarUserProfile(comment.username) ?? "https://github.com/shadcn.png"} />
+                        <AvatarFallback>UserProfile</AvatarFallback>
+                    </Avatar>
                       <span className="font-semibold text-gray-800 mr-2">{comment.username}</span>
                       <p className="text-gray-400 flex-1">{comment.content}</p>
                     </div>
@@ -200,16 +212,16 @@ const PostModal = ({ post, isLike, onClose } : {post : Post, isLike : boolean, o
                   </div>
                   {
                     comment.userId === Number(localStorage.getItem('userid')) && (
-                      <div className="flex-1 flex justify-center items-center">
-                        <Button>
+                      <div className="flex justify-center items-center">
+                        <Button onClick={() => editComment(comment.id)}>
                           <PencilIcon />
                         </Button>
-                        <Button>
+                        <Button onClick={() => deleteComment(comment.id)}>
                           <Trash2Icon />
                         </Button>
                       </div>
                     )
-                  }
+                  } */}
                   
                 </div>
               ))

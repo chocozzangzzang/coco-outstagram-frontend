@@ -1,7 +1,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { Post, PostProps } from "@/types/post";
+import { Comment, Post, PostProps, User } from "@/types/post";
 import { getTimeAgo } from "@/utils/timeCalcul";
 import { HeartIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -15,9 +15,10 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
     const [ count, setCount ] = useState(0);
     const [ liked, setLiked ] = useState(false);
     const [ likeId, setLikeId ] = useState<number>();
-
+    const [ comments, setComments ] = useState<Comment[]>(post.comments);
     const [ isModalOpen, setIsModalOpen ] = useState(false);
     const [ currentPost, setCurrentPost ] = useState<Post | null>(null);
+    const [ user, setUser ] = useState<User>();
     const userId = localStorage.getItem("userid");
 
     const openModal = (post : Post) => {
@@ -30,9 +31,31 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
         setIsModalOpen(false);
     }
 
+    const getUserInfo = async() => {
+        const username = post.writer;
+        const response = await fetch("http://localhost:8080/api/user/profile", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                username : username,
+            })
+        });
+        if(response.status !== 200) {
+        alert("프로필을 불러올 수 없습니다.");
+        } else {
+            const result = await response.json();
+            setUser(result);
+        }
+     }
+
     const createdDuration = useMemo(() => getTimeAgo(post.createdAt), [post.createdAt]);
     useEffect(() => {
         if(!api) return;
+
+        getUserInfo();
 
         if(post.postImages.length > 0) {
 
@@ -44,7 +67,6 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
             })
 
             setCount(post.postImages.length);
-            console.log(post.likes);
             post.likes.map((like) => {
                 if(like.userId.toString() === userId) {
                     setLikeId(like.id); 
@@ -53,7 +75,7 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
                 }
             })   
         } 
-    }, [api])
+    }, [api, comments])
 
     const like = async () => {
         const result = await fetch("http://localhost:8080/api/post/like", {
@@ -106,7 +128,7 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
             <div className=" border border-black w-[70%] h-[70vh] flex flex-col items-center pt-6 gap-4 rounded-xl pr-2">
                 <div className="w-[80%] h-[10%] flex flex-start items-center gap-4">
                     <Avatar className="w-16 h-16">
-                        <AvatarImage src="https://github.com/shadcn.png"/>
+                        <AvatarImage src={user?.profilePictureUrl ? user?.profilePictureUrl : "https://github.com/shadcn.png"} />
                         <AvatarFallback>UserProfile</AvatarFallback>
                     </Avatar> {post.writer} {createdDuration}
                 </div>
@@ -153,12 +175,12 @@ const PostLayout: React.FC<PostProps> = ( { post } ) => {
                     <p>{post.content}</p>
                 </div>
                 <div className="w-[80%] h-[10%] p-0">
-                    <Button variant="ghost" onClick={() => openModal(post)}>{post.comments.length} comments</Button>
+                    <Button variant="ghost" onClick={() => openModal(post)}>{comments.length} comments</Button>
                 </div>
             </div>
 
             {isModalOpen && post && (
-                <PostModal post={post} isLike={liked} onClose={closeModal} />
+                <PostModal post={post} isLike={liked} onClose={closeModal} comments={comments} setComments={setComments}/>
             )}
         </>
     )
