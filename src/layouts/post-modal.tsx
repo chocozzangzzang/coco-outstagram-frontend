@@ -102,10 +102,6 @@ const PostModal = ({ post, isLike, onClose, comments, setComments } : {
     }
   };
 
-  const editComment = (id : number) => {
-    alert(id);
-  }
-
   const deleteComment = async (id : number) => {
     if(!confirm("댓글을 삭제하시겠습니까?")) return;
     const response = await fetch(`http://localhost:8080/api/comment/delete?commentId=${id}`);
@@ -196,33 +192,7 @@ const PostModal = ({ post, isLike, onClose, comments, setComments } : {
             ) : (
               comments.map(comment => (
                 <div key={comment.id} className="flex gap-4">
-                  <PostCommentLayout comment={comment} delComms={deleteComment}/>
-                  {/* <div className="mb-3 flex flex-col items-start flex-1">
-                    <div className="flex">
-                      <Avatar className="w-8 h-8 me-2">
-                        <AvatarImage src={getAvatarUserProfile(comment.username) ?? "https://github.com/shadcn.png"} />
-                        <AvatarFallback>UserProfile</AvatarFallback>
-                    </Avatar>
-                      <span className="font-semibold text-gray-800 mr-2">{comment.username}</span>
-                      <p className="text-gray-400 flex-1">{comment.content}</p>
-                    </div>
-                    <div>
-                      <p className="text-gray-400">{getTimeAgo(comment.createdAt)}</p>
-                    </div>
-                  </div>
-                  {
-                    comment.userId === Number(localStorage.getItem('userid')) && (
-                      <div className="flex justify-center items-center">
-                        <Button onClick={() => editComment(comment.id)}>
-                          <PencilIcon />
-                        </Button>
-                        <Button onClick={() => deleteComment(comment.id)}>
-                          <Trash2Icon />
-                        </Button>
-                      </div>
-                    )
-                  } */}
-                  
+                  <PostCommentLayout comment={comment} delComms={deleteComment}/>                  
                 </div>
               ))
             )}
