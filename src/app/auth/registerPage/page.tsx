@@ -9,7 +9,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import admin from 'firebase-admin'
+import { auth } from "@/firebase/config";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 const Page = () => {
 
@@ -27,25 +28,19 @@ const Page = () => {
     const onSubmit = async (values : RegisterFormSchemaType) => {
 
         try {
-
-            // firebase authentication
-            const registerRecord = await admin.auth().createUser({
-                email: values.email,
-                password: values.password,
-                displayName: values.username,
-            });
-
-            const firebaseUid = registerRecord.uid;
-
-            console.log("f uid : ", firebaseUid);
+            const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+            const user = userCredential.user;
+            const idToken = await user.getIdToken();
 
             await fetch("http://localhost:8080/api/user/register", {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${process.env.PUBLIC_JWT_SECRET_TOKEN}`,
+                    "Authorization": `Bearer ${idToken}`,
                     "Content-Type" : "application/json",
                 },
-                body: JSON.stringify({ username : values.username, email : values.email, password : values.password, uid : firebaseUid})
+                body: JSON.stringify({ 
+                    username : values.username, 
+                    email : values.email})
             }).then(result => {
                 if(result.status === 201) {
                     form.reset();
