@@ -1,9 +1,7 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Carousel, CarouselApi, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Comment, Post, User } from "@/types/post";
 import { getTimeAgo } from "@/utils/timeCalcul";
-import { PencilIcon, Trash2Icon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import PostCommentLayout from "./post-comment-layout";
 

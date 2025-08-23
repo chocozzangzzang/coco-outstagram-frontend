@@ -42,6 +42,7 @@ export interface User {
   role: string;
   email: string;
   createdAt: string;
+  firebaseUid: string;
   comments: Comment[];
   likes: Like[];
 }

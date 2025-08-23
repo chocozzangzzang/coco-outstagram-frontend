@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "../globals.css";
 import LeftSideBar from "@/layouts/left-side-bar";
 import RightMessageBar from "@/layouts/right-message-bar";
@@ -17,15 +18,20 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <div className="flex min-h-screen w-full mx-auto">
-          <div className="m-2 p-4 gap-6 flex flex-col md:p-6 md:m-4" style={{ "flex" : 1 }}>
+          <div
+            className="m-2 p-4 gap-6 flex flex-col md:p-6 md:m-4"
+            style={{ flex: 1 }}
+          >
             <LeftSideBar />
           </div>
-          <div className="border-l-2 border-gray-300"></div> {/* 얇은 회색 구분선 */}
-          <div className="flex justify-center" style={{ "flex" : 3 }}>
-            { children }
+          <div className="border-l-2 border-gray-300"></div>{" "}
+          {/* 얇은 회색 구분선 */}
+          <div className="flex justify-center" style={{ flex: 3 }}>
+            {children}
           </div>
-          <div className="border-r-2 border-gray-300"></div> {/* 얇은 회색 구분선 */}
-          <div className="flex justify-center items-center" style={{ "flex" : 2 }}>
+          <div className="border-r-2 border-gray-300"></div>{" "}
+          {/* 얇은 회색 구분선 */}
+          <div className="flex justify-center" style={{ flex: 2 }}>
             <RightMessageBar />
           </div>
         </div>
